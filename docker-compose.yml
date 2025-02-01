@@ -1,0 +1,49 @@
+services:
+  vaults_db:
+    image: postgres:16-alpine
+    container_name: vaults_db
+    command: postgres -c 'max_connections=15000'
+    shm_size: 512m
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5433"
+    env_file:
+      - .env
+    profiles:
+      - default
+      - production
+
+  django_vaults_backend:
+    container_name: django_vaults_backend
+    command: ["bash", "/code/docker/start_server.sh"]
+    volumes:
+      - .:/code
+    ports:
+      - "8000:8000"
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      - vaults_db
+    profiles:
+      - default
+
+  django_vaults_backend_production:
+    container_name: django_vaults_backend_production
+    command: [ "bash", "/code/docker/start_server_production.sh" ]
+    volumes:
+      - .:/code
+    ports:
+      - "8000:8000"
+    build: .
+    restart: unless-stopped
+    profiles:
+      - production
+      - production_only
+    env_file:
+      - .env
+
+volumes:
+  postgres_data:
